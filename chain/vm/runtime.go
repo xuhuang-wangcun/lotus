@@ -192,14 +192,20 @@ func (rt *Runtime) CreateActor(codeId cid.Cid, address address.Address) {
 	}
 }
 
-func (rt *Runtime) DeleteActor() {
+func (rt *Runtime) DeleteActor(beneficiary address.Address) {
 	rt.ChargeGas(rt.Pricelist().OnDeleteActor())
 	act, err := rt.state.GetActor(rt.Message().Receiver())
 	if err != nil {
 		rt.Abortf(exitcode.SysErrInternal, "failed to load actor in delete actor: %s", err)
 	}
 	if !act.Balance.IsZero() {
-		rt.Abortf(exitcode.SysErrInternal, "cannot delete actor with non-zero balance")
+		b, err := rt.state.GetActor(beneficiary)
+		if err != nil {
+			rt.Abortf(exitcode.SysErrInternal, "failed to load beneficiary in delete actor: %s", err)
+		}
+		if err := Transfer(act, b, act.Balance); err != nil {
+			rt.Abortf(exitcode.SysErrInternal, "failed to transfer deleted actor's balance to beneficiary: %s", err)
+		}
 	}
 	if err := rt.state.DeleteActor(rt.Message().Receiver()); err != nil {
 		rt.Abortf(exitcode.SysErrInternal, "failed to delete actor: %s", err)
