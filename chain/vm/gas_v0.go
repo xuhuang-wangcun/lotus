@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"github.com/filecoin-project/lotus/chain/actors/aerrors"
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	"github.com/filecoin-project/specs-actors/actors/builtin"
@@ -86,11 +87,13 @@ var _ Pricelist = (*pricelistV0)(nil)
 
 // OnChainMessage returns the gas used for storing a message of a given size in the chain.
 func (pl *pricelistV0) OnChainMessage(msgSize int) int64 {
+	fmt.Println("OnChainMessage", pl.onChainMessageBase+pl.onChainMessagePerByte*int64(msgSize))
 	return pl.onChainMessageBase + pl.onChainMessagePerByte*int64(msgSize)
 }
 
 // OnChainReturnValue returns the gas used for storing the response of a message in the chain.
 func (pl *pricelistV0) OnChainReturnValue(dataSize int) int64 {
+	fmt.Println("OnChainReturnValue", int64(dataSize)*pl.onChainReturnValuePerByte)
 	return int64(dataSize) * pl.onChainReturnValuePerByte
 }
 
@@ -103,26 +106,31 @@ func (pl *pricelistV0) OnMethodInvocation(value abi.TokenAmount, methodNum abi.M
 	if methodNum != builtin.MethodSend {
 		ret += pl.sendInvokeMethod
 	}
+	fmt.Println("OnMethodInvocation", ret)
 	return ret
 }
 
 // OnIpldGet returns the gas used for storing an object
 func (pl *pricelistV0) OnIpldGet(dataSize int) int64 {
+	fmt.Println("OnIpldGet", pl.ipldGetBase+int64(dataSize)*pl.ipldGetPerByte)
 	return pl.ipldGetBase + int64(dataSize)*pl.ipldGetPerByte
 }
 
 // OnIpldPut returns the gas used for storing an object
 func (pl *pricelistV0) OnIpldPut(dataSize int) int64 {
+	fmt.Println("OnIpldPut", pl.ipldPutBase+int64(dataSize)*pl.ipldPutPerByte)
 	return pl.ipldPutBase + int64(dataSize)*pl.ipldPutPerByte
 }
 
 // OnCreateActor returns the gas used for creating an actor
 func (pl *pricelistV0) OnCreateActor() int64 {
+	fmt.Println("OnCreateActor", pl.createActorBase+pl.createActorExtra)
 	return pl.createActorBase + pl.createActorExtra
 }
 
 // OnDeleteActor returns the gas used for deleting an actor
 func (pl *pricelistV0) OnDeleteActor() int64 {
+	fmt.Println("OnDeleteActor", pl.deleteActor)
 	return pl.deleteActor
 }
 
@@ -133,33 +141,39 @@ func (pl *pricelistV0) OnVerifySignature(sigType crypto.SigType, planTextSize in
 		// TODO: fix retcode to be int64
 		panic(aerrors.Newf(uint8(exitcode.SysErrInternal&0xff), "Cost function for signature type %d not supported", sigType))
 	}
+	fmt.Println("OnVerifySignature", costFn(int64(planTextSize)))
 	return costFn(int64(planTextSize))
 }
 
 // OnHashing
 func (pl *pricelistV0) OnHashing(dataSize int) int64 {
+	fmt.Println("OnHashing", pl.hashingBase+int64(dataSize)*pl.hashingPerByte)
 	return pl.hashingBase + int64(dataSize)*pl.hashingPerByte
 }
 
 // OnComputeUnsealedSectorCid
 func (pl *pricelistV0) OnComputeUnsealedSectorCid(proofType abi.RegisteredProof, pieces []abi.PieceInfo) int64 {
 	// TODO: this needs more cost tunning, check with @lotus
+	fmt.Println("OnComputeUnsealedSectorCid", pl.computeUnsealedSectorCidBase)
 	return pl.computeUnsealedSectorCidBase
 }
 
 // OnVerifySeal
 func (pl *pricelistV0) OnVerifySeal(info abi.SealVerifyInfo) int64 {
 	// TODO: this needs more cost tunning, check with @lotus
+	fmt.Println("OnVerifySeal", pl.verifySealBase)
 	return pl.verifySealBase
 }
 
 // OnVerifyPost
 func (pl *pricelistV0) OnVerifyPost(info abi.PoStVerifyInfo) int64 {
 	// TODO: this needs more cost tunning, check with @lotus
+	fmt.Println("OnVerifyPost", pl.verifyPostBase)
 	return pl.verifyPostBase
 }
 
 // OnVerifyConsensusFault
 func (pl *pricelistV0) OnVerifyConsensusFault() int64 {
+	fmt.Println("OnVerifyConsensusFault", pl.verifyConsensusFault)
 	return pl.verifyConsensusFault
 }
